@@ -1,0 +1,54 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --pulse-duration: 2.4s;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-surface text-slate-800 font-body antialiased;
+}
+
+.dark body {
+  @apply bg-slate-950 text-slate-100;
+}
+
+/* Signature element: a slow "vital sign" pulse used sparingly on live/active
+   indicators (dashboard cards, "listening" badges) to nod at the medical
+   monitoring subject without being literal about it. */
+.vital-pulse {
+  position: relative;
+}
+.vital-pulse::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  border: 1.5px solid theme("colors.brand.400");
+  opacity: 0;
+  animation: vital-pulse var(--pulse-duration) ease-out infinite;
+}
+@keyframes vital-pulse {
+  0% { opacity: 0.55; transform: scale(0.96); }
+  70% { opacity: 0; transform: scale(1.12); }
+  100% { opacity: 0; transform: scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vital-pulse::before { animation: none; opacity: 0; }
+  html { scroll-behavior: auto; }
+}
+
+.focus-ring {
+  @apply outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }

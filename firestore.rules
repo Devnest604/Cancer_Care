@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{userId} {
+      // Admins can read/list everyone (dashboard, tables, analytics).
+      // A caretaker can only read their own document (used by the Flutter app).
+      allow read: if isAdmin() || request.auth.uid == userId;
+
+      // Caretaker docs are created/deleted only via the server-side Admin SDK
+      // (app/api/users routes), which bypasses these rules entirely.
+      // From the client: nobody can create or delete user docs directly.
+      allow create, delete: if false;
+
+      // A caretaker may update ONLY their own watchTimeSeconds / lastWatched
+      // fields (what the Flutter app writes after watching a video).
+      // Admins update name/email through the API routes, not directly —
+      // but reads/writes to those fields are allowed here too for convenience.
+      allow update: if isAdmin() ||
+        (request.auth.uid == userId &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['watchTimeSeconds', 'lastWatched']));
+    }
+  }
+}
