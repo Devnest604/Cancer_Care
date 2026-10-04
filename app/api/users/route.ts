@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 
 // Verifies the caller is a signed-in admin before touching Auth/Firestore.
 // The client sends its Firebase ID token in the Authorization header.
 async function requireAdmin(req: NextRequest) {
+  const adminAuth = getAdminAuth();
+  const adminDb = getAdminDb();
   const authHeader = req.headers.get("authorization") ?? "";
   const token = authHeader.replace("Bearer ", "");
   if (!token) throw new Error("UNAUTHENTICATED");
@@ -44,6 +46,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
     const authUser = await adminAuth.createUser({
       email,
       password,

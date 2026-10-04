@@ -43,7 +43,7 @@ export default function UserDetailsPage() {
   if (!user) {
     return (
       <div className="py-10 text-center">
-        <p className="text-sm text-slate-500">This user doesn't exist anymore.</p>
+        <p className="text-sm text-slate-500">This user doesn&apos;t exist anymore.</p>
         <button
           onClick={() => router.push("/dashboard/users")}
           className="focus-ring mt-3 text-sm font-medium text-brand-600"

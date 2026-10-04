@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 
 async function requireAdmin(req: NextRequest) {
+  const adminAuth = getAdminAuth();
+  const adminDb = getAdminDb();
   const authHeader = req.headers.get("authorization") ?? "";
   const token = authHeader.replace("Bearer ", "");
   if (!token) throw new Error("UNAUTHENTICATED");
@@ -15,7 +17,7 @@ async function requireAdmin(req: NextRequest) {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireAdmin(req);
@@ -27,7 +29,7 @@ export async function PATCH(
     );
   }
 
-  const { name, email } = await req.json();
+  const [{ id }, { name, email }] = await Promise.all([params, req.json()]);
   const updates: Record<string, string> = {};
   if (name) updates.name = name;
   if (email) updates.email = email;
@@ -37,12 +39,14 @@ export async function PATCH(
   }
 
   try {
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
     if (email) {
-      await adminAuth.updateUser(params.id, { email, displayName: name });
+      await adminAuth.updateUser(id, { email, displayName: name });
     } else if (name) {
-      await adminAuth.updateUser(params.id, { displayName: name });
+      await adminAuth.updateUser(id, { displayName: name });
     }
-    await adminDb.collection("users").doc(params.id).update(updates);
+    await adminDb.collection("users").doc(id).update(updates);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
@@ -54,7 +58,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireAdmin(req);
@@ -67,8 +71,11 @@ export async function DELETE(
   }
 
   try {
-    await adminAuth.deleteUser(params.id);
-    await adminDb.collection("users").doc(params.id).delete();
+    const { id } = await params;
+    const adminAuth = getAdminAuth();
+    const adminDb = getAdminDb();
+    await adminAuth.deleteUser(id);
+    await adminDb.collection("users").doc(id).delete();
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
